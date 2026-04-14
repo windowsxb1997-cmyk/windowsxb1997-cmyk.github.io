@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aluminum Foil Boat Experiment Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+            min-height: 100vh;
+            padding: 20px;
+            background-attachment: fixed;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M0,50 Q25,30 50,50 T100,50" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="4"/></svg>');
+            background-repeat: repeat-x;
+            background-position: bottom;
+        }
+
+        .quiz-box {
+            max-width: 600px;
+            margin: 30px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quiz-box::before {
+            content: "⛵";
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 30px;
+        }
+
+        .title {
+            text-align: center;
+            color: #0277bd;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .progress {
+            text-align: center;
+            color: #0288d1;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .question-card {
+            background: #e1f5fe;
+            padding: 20px;
+            border-radius: 18px;
+            margin-bottom: 20px;
+            border: 2px solid #b3e5fc;
+        }
+
+        .question-text {
+            font-size: 18px;
+            color: #01579b;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option {
+            background: #fafafa;
+            border: 2px solid #ddd;
+            padding: 14px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .option:hover {
+            background: #e0f7fa;
+            border-color: #4fc3f7;
+        }
+
+        .option.correct {
+            background: #c8e6c9 !important;
+            border-color: #388e3c !important;
+            color: #1b5e20;
+        }
+
+        .option.wrong {
+            background: #ffcdd2 !important;
+            border-color: #d32f2f !important;
+            color: #b71c1c;
+        }
+
+        .feedback {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 15px 0;
+            height: 30px;
+        }
+
+        .next-btn {
+            display: block;
+            width: 180px;
+            margin: 10px auto;
+            padding: 12px;
+            background: #0288d1;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .next-btn:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
+
+        .final-score {
+            text-align: center;
+            font-size: 26px;
+            font-weight: bold;
+            color: #01579b;
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="quiz-box">
+        <h1 class="title">⛵ Aluminum Foil Boat Experiment Quiz ⛵</h1>
+        <div class="progress" id="progress"></div>
+        <div class="question-card" id="questionCard"></div>
+        <div class="feedback" id="feedback"></div>
+        <button class="next-btn" id="nextBtn" disabled>Next Question →</button>
+        <div id="finalScore" style="display:none;" class="final-score"></div>
+    </div>
+
+    <script>
+        // 题目数据
+        const quizData = [
+            { q: "What material will we use to make our boat?", o: ["Paper", "Aluminum foil", "Plastic", "Wood"], a: "Aluminum foil" },
+            { q: "What will we put on the boat to test it?", o: ["Stones", "Coins", "Leaves", "Toys"], a: "Coins" },
+            { q: "What happens if we put too many coins on the boat?", o: ["It flies away", "It sinks", "It gets bigger", "It changes color"], a: "It sinks" },
+            { q: "The weight of the aluminum foil we use when folding the boats can be different.", o: ["True", "False"], a: "False" },
+            { q: "The depth of the boats must be the same when we fold them.", o: ["True", "False"], a: "True" },
+            { q: "Why can a thin aluminum foil boat float?", o: ["It is shiny", "It holds air and spreads weight", "It is very light", "It loves water"], a: "It holds air and spreads weight" },
+            { q: "In our class, which shape of boat can hold the most coins?", o: ["A. Square", "B. Rectangle", "C. Triangle", "D. All the same"], a: "A. Square" },
+            { q: "Why can a square aluminum foil boat hold the most coins?", o: ["Square looks nice", "A square boat has the largest bottom area", "Square boats are lighter", "Square is easier to make"], a: "A square boat has the largest bottom area" },
+            { q: "What keeps the boat floating on water?", o: ["Wind", "Gravity", "Buoyancy", "Sunlight"], a: "Buoyancy" }
+        ];
+
+        let current = 0;
+        let score = 0;
+        let answered = false;
+
+        const progress = document.getElementById("progress");
+        const card = document.getElementById("questionCard");
+        const feedback = document.getElementById("feedback");
+        const nextBtn = document.getElementById("nextBtn");
+        const finalScore = document.getElementById("finalScore");
+
+        // 加载当前题目
+        function loadQuestion() {
+            const q = quizData[current];
+            progress.textContent = `Question ${current + 1} / ${quizData.length}`;
+            card.innerHTML = `
+                <div class="question-text">${q.q}</div>
+                <div class="options">
+                    ${q.o.map(opt => `<div class="option" onclick="select('${opt.replace(/'/g, "\\'")}')">${opt}</div>`).join('')}
+                </div>
+            `;
+            feedback.textContent = "";
+            nextBtn.disabled = true;
+            answered = false;
+        }
+
+        // 选择答案
+        window.select = (value) => {
+            if (answered) return;
+            answered = true;
+            const q = quizData[current];
+            const opts = document.querySelectorAll(".option");
+            
+            opts.forEach(opt => {
+                const text = opt.innerText;
+                if (text === q.a) opt.classList.add("correct");
+                else if (text === value) opt.classList.add("wrong");
+            });
+
+            if (value === q.a) {
+                feedback.textContent = "✅ Correct! Great job!";
+                feedback.style.color = "#2e7d32";
+                score += 1;
+            } else {
+                feedback.textContent = "❌ Oops! Try next one!";
+                feedback.style.color = "#c62828";
+            }
+
+            nextBtn.disabled = false;
+        };
+
+        // 下一题
+        nextBtn.onclick = () => {
+            current++;
+            if (current < quizData.length) {
+                loadQuestion();
+            } else {
+                showFinalScore();
+            }
+        };
+
+        // 最终分数（全对固定显示100分）
+        function showFinalScore() {
+            card.style.display = "none";
+            feedback.style.display = "none";
+            nextBtn.style.display = "none";
+            progress.style.display = "none";
+            finalScore.style.display = "block";
+
+            if (score === quizData.length) {
+                finalScore.innerHTML = `🎉 Perfect! Your Score: 100/100 🎉`;
+            } else {
+                const totalScore = Math.round((score / quizData.length) * 100);
+                finalScore.innerHTML = `🎉 Your Score: ${totalScore}/100 🎉`;
+            }
+        }
+
+        // 开始
+        loadQuestion();
+    </script>
+</body>
+</html>
